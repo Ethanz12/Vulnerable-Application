@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: campus
+      POSTGRES_USER: campus
+      POSTGRES_PASSWORD: campus
+    volumes:
+      - ./docker/db/init:/docker-entrypoint-initdb.d:ro
+      - dbdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campus -d campus"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  web:
+    build: ./app
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/campus
+      DB_USER: campus
+      DB_PASS: campus
+      BOT_WEBHOOK: http://bot:5000/review
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  bot:
+    build: ./docker/bot
+    environment:
+      APP_URL: http://web:8080/campus-events
+      ADMIN_USER: admin
+      ADMIN_PASS: Admin#2026!
+    volumes:
+      - ./screenshots:/bot/screenshots
+    depends_on:
+      - web
+    ports:
+      - "127.0.0.1:5000:5000"
+
+volumes:
+  dbdata:

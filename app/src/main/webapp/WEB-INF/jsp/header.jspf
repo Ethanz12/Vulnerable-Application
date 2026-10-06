@@ -1,0 +1,22 @@
+<%@ page import="campus.web.User" %>
+<%
+    campus.web.User navUser = (campus.web.User) session.getAttribute("user");
+%>
+<header class="topbar">
+  <a class="brand" href="index.jsp">Campus Events</a>
+  <nav>
+    <a href="index.jsp">Events</a>
+    <% if (navUser != null) { %>
+      <% if ("student".equals(navUser.getRole())) { %><a href="student.jsp">My Campus</a><% } %>
+      <% if (navUser.isOrganiser()) { %><a href="organiser.jsp">Organiser</a><% } %>
+      <% if (navUser.isAdmin()) { %><a href="admin.jsp">Administration</a><% } %>
+      <span class="who"><%= navUser.getUsername() %> &middot; <%= navUser.getRole() %></span>
+      <a href="#" id="logout-link">Log out</a>
+    <% } else { %>
+      <a href="login.jsp">Log in</a>
+      <a href="signup.jsp">Sign up</a>
+    <% } %>
+  </nav>
+</header>
+<div id="toast"></div>
+<main class="page">

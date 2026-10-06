@@ -1,0 +1,27 @@
+# Build output
+app/target/
+*.class
+*.war
+
+# Python
+__pycache__/
+*.pyc
+
+# Bot screenshots (generated at runtime)
+screenshots/*.png
+
+# Cookie jars from testing
+*.jar
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+.qoder/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes (never commit db data)
+dbdata/

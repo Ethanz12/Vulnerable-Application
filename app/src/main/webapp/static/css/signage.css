@@ -1,0 +1,19 @@
+/* Digital signage display pages (full-screen, dark, projector-friendly). */
+body.signage {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #101418;
+  color: #f2f5f7;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+body.signage main { max-width: 60rem; padding: 4rem; text-align: center; }
+body.signage h1 { font-size: 3.5rem; margin-bottom: 1rem; color: #ffd166; }
+body.signage .signage-body { font-size: 1.6rem; line-height: 1.5; }
+body.signage .signage-body h2 { color: #ffd166; }
+body.signage .signage-footer {
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  opacity: 0.5;
+}
