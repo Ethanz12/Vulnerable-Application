@@ -42,7 +42,7 @@ public class PreviewServlet extends ApiServlet {
             rd.forward(req, res);
         } catch (Exception e) {
             if (!res.isCommitted()) {
-                err(res, 500, "Preview failed: " + e.getMessage());
+                err(res, 500, "Preview failed");
             }
         }
     }

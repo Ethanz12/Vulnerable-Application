@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import campus.db.Database;
+import campus.util.HtmlSanitizer;
 import campus.web.User;
 
 /** Reusable announcement templates maintained by administrators. */
@@ -38,7 +39,7 @@ public class AnnouncementsServlet extends ApiServlet {
             }
             ok(res, new JSONObject().put("templates", out));
         } catch (Exception e) {
-            err(res, 500, "Templates unavailable: " + e.getMessage());
+            err(res, 500, "Templates unavailable");
         }
     }
 
@@ -55,7 +56,7 @@ public class AnnouncementsServlet extends ApiServlet {
                 ps.setInt(1, Integer.parseInt(idParam));
                 ps.executeUpdate();
             } catch (Exception e) {
-                err(res, 500, "Delete failed: " + e.getMessage());
+                err(res, 500, "Delete failed");
                 return;
             }
             ok(res, null);
@@ -67,14 +68,16 @@ public class AnnouncementsServlet extends ApiServlet {
             err(res, 400, "Name is required");
             return;
         }
+        // Sanitize HTML body to prevent stored XSS
+        String sanitizedBody = HtmlSanitizer.sanitize(body == null ? "" : body);
         try (Connection c = Database.get();
              PreparedStatement ps = c.prepareStatement(
                      "INSERT INTO announcement_templates (name, body_html) VALUES (?, ?)")) {
             ps.setString(1, name.trim());
-            ps.setString(2, body == null ? "" : body);
+            ps.setString(2, sanitizedBody);
             ps.executeUpdate();
         } catch (Exception e) {
-            err(res, 500, "Save failed: " + e.getMessage());
+            err(res, 500, "Save failed");
             return;
         }
         ok(res, null);

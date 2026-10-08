@@ -39,7 +39,7 @@ public class AdminReviewServlet extends ApiServlet {
         } catch (NumberFormatException e) {
             err(res, 400, "Invalid event id");
         } catch (Exception e) {
-            err(res, 500, "Review unavailable: " + e.getMessage());
+            err(res, 500, "Review unavailable");
         }
     }
 
@@ -77,7 +77,7 @@ public class AdminReviewServlet extends ApiServlet {
         } catch (NumberFormatException e) {
             err(res, 400, "Invalid event id");
         } catch (Exception e) {
-            err(res, 500, "Review action failed: " + e.getMessage());
+            err(res, 500, "Review action failed");
         }
     }
 

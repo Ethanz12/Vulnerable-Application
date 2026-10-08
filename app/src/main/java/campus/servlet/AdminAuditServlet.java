@@ -39,7 +39,7 @@ public class AdminAuditServlet extends ApiServlet {
             }
             ok(res, new JSONObject().put("entries", out));
         } catch (Exception e) {
-            err(res, 500, "Audit log unavailable: " + e.getMessage());
+            err(res, 500, "Audit log unavailable");
         }
     }
 }

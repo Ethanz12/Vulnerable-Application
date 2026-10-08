@@ -56,7 +56,7 @@ public class OrganiserServlet extends ApiServlet {
             }
             ok(res, new JSONObject().put("events", out));
         } catch (Exception e) {
-            err(res, 500, "Could not load events: " + e.getMessage());
+            err(res, 500, "Could not load events");
         }
     }
 
@@ -88,7 +88,7 @@ public class OrganiserServlet extends ApiServlet {
                 }
             }
         } catch (Exception e) {
-            err(res, 500, "Could not load event: " + e.getMessage());
+            err(res, 500, "Could not load event");
         }
     }
 
@@ -185,7 +185,7 @@ public class OrganiserServlet extends ApiServlet {
         } catch (NumberFormatException e) {
             err(res, 400, "Invalid event id");
         } catch (Exception e) {
-            err(res, 500, "Save failed: " + e.getMessage());
+            err(res, 500, "Save failed");
         }
     }
 
@@ -217,7 +217,7 @@ public class OrganiserServlet extends ApiServlet {
         } catch (NumberFormatException e) {
             err(res, 400, "Invalid event id");
         } catch (Exception e) {
-            err(res, 500, "Submit failed: " + e.getMessage());
+            err(res, 500, "Submit failed");
         }
     }
 

@@ -81,6 +81,10 @@ public class EnvelopeFilter implements Filter {
         }
 
         CaptureResponse captured = new CaptureResponse(res);
+        // Add security headers to every response
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+        res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
         try {
             chain.doFilter(effectiveReq, captured);
         } catch (Exception e) {
@@ -88,7 +92,7 @@ public class EnvelopeFilter implements Filter {
                 throw new ServletException(e);
             }
             captured.reset();
-            fail(res, 500, "Internal error: " + e.getClass().getSimpleName());
+            fail(res, 500, "Internal error");
             return;
         }
 

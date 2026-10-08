@@ -47,7 +47,7 @@ public class TeamServlet extends ApiServlet {
                         .put("event_title", rs.getString("title")));
             }
         } catch (Exception e) {
-            err(res, 500, "Lookup failed: " + e.getMessage());
+            err(res, 500, "Lookup failed");
         }
     }
 
@@ -134,7 +134,7 @@ public class TeamServlet extends ApiServlet {
                 ps.executeUpdate();
             }
         } catch (Exception e) {
-            err(res, 500, "Could not join team: " + e.getMessage());
+            err(res, 500, "Could not join team");
             return;
         }
         ok(res, new JSONObject()

@@ -62,7 +62,7 @@ public class MeServlet extends ApiServlet {
             me.put("teams", teams).put("attending", attending);
             ok(res, me);
         } catch (Exception e) {
-            err(res, 500, "Profile unavailable: " + e.getMessage());
+            err(res, 500, "Profile unavailable");
         }
     }
 }
