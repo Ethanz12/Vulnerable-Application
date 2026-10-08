@@ -12,7 +12,6 @@ import org.json.JSONObject;
 import campus.web.User;
 import campus.util.Servlets;
 
-/** Shared helpers for the JSON API servlets. */
 public abstract class ApiServlet extends HttpServlet {
 
     protected void json(HttpServletResponse res, int status, Object body) throws IOException {

@@ -20,7 +20,7 @@ public final class Config {
 
     private Config() {}
 
-    /** Environment variable wins over the packaged default. */
+    
     public static String get(String key, String envVar) {
         String v = envVar == null ? null : System.getenv(envVar);
         if (v != null && !v.isBlank()) {

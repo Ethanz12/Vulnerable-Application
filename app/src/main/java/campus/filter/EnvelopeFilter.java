@@ -24,15 +24,6 @@ import org.json.JSONObject;
 import campus.crypto.Rc4;
 import campus.util.Config;
 
-/**
- * Application-level encrypted envelope. Every dynamic request/response body
- * travels as base64(RC4(staticKey, body)). Request bodies are decrypted into
- * request parameters; response bodies are re-encrypted, HTML pages being
- * wrapped in a small bootstrap page that decrypts in the browser.
- * The static key is hardcoded in app.properties AND shipped to the client in
- * /static/js/app-crypto.js - by design, this is the lab's stage-0 weakness.
- * SECURITY TRAINING LAB ONLY.
- */
 @WebFilter(urlPatterns = "/*")
 public class EnvelopeFilter implements Filter {
 
@@ -81,7 +72,7 @@ public class EnvelopeFilter implements Filter {
         }
 
         CaptureResponse captured = new CaptureResponse(res);
-        // Add security headers to every response
+        
         res.setHeader("X-Content-Type-Options", "nosniff");
         res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
         res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
@@ -99,7 +90,7 @@ public class EnvelopeFilter implements Filter {
         byte[] body = captured.getCapturedBytes();
         int status = captured.getStatus();
         if (body.length == 0 || (status >= 300 && status < 400)) {
-            return; // redirects and empty bodies carry no envelope
+            return; 
         }
 
         String contentType = captured.getContentType();

@@ -18,7 +18,6 @@ import campus.db.Database;
 import campus.web.User;
 import campus.util.Servlets;
 
-/** Organiser workspace: list, create and edit events, submit for review. */
 @WebServlet(urlPatterns = "/api/organiser")
 public class OrganiserServlet extends ApiServlet {
 
@@ -132,15 +131,15 @@ public class OrganiserServlet extends ApiServlet {
             return;
         }
         
-        // HARD MODE: Basic XSS filter - blocks <script> tags but NOT event handlers
-        // This is a common real-world mistake - developers think blocking <script> is enough
+        
+        
         if (description != null) {
             String lowerDesc = description.toLowerCase();
             if (lowerDesc.contains("<script") || lowerDesc.contains("</script>")) {
                 err(res, 400, "Script tags are not allowed in descriptions");
                 return;
             }
-            // VULNERABILITY: Doesn't block event handlers like <img onerror=>, <body onload=>, etc.
+            
         }
         
         try (Connection c = Database.get()) {

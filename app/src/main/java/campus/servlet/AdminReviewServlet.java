@@ -15,11 +15,6 @@ import org.json.JSONObject;
 import campus.db.Database;
 import campus.web.User;
 
-/**
- * Administrator event review. The review detail returns description_html raw;
- * the review page renders it with innerHTML with no sanitisation
- * (VULNERABILITY 3 - the bot views this page in an admin session).
- */
 @WebServlet(urlPatterns = "/api/admin/review")
 public class AdminReviewServlet extends ApiServlet {
 

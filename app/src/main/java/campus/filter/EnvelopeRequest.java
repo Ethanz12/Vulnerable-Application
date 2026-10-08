@@ -8,10 +8,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
-/**
- * Exposes the decrypted envelope JSON as ordinary request parameters.
- * Query-string parameters still pass through untouched.
- */
 public class EnvelopeRequest extends HttpServletRequestWrapper {
 
     private final Map<String, String[]> envelopeParams;

@@ -15,7 +15,6 @@ import org.json.JSONObject;
 import campus.db.Database;
 import campus.web.User;
 
-/** Administrator audit trail - shows role changes, uploads and review actions. */
 @WebServlet(urlPatterns = "/api/admin/audit")
 public class AdminAuditServlet extends ApiServlet {
 

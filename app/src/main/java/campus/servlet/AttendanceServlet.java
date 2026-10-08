@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletResponse;
 import campus.db.Database;
 import campus.web.User;
 
-/** Students register attendance for published events. */
 @WebServlet(urlPatterns = "/api/attendance")
 public class AttendanceServlet extends ApiServlet {
 

@@ -15,11 +15,6 @@ import org.json.JSONObject;
 
 import campus.web.User;
 
-/**
- * VULNERABILITY 4 (upload half): administrators upload digital-signage
- * template files. There are no file-extension or content checks, so a .jsp
- * file lands in the web-accessible /uploads/templates directory.
- */
 @WebServlet(urlPatterns = "/api/admin/templates")
 public class SignageServlet extends ApiServlet {
 
@@ -59,17 +54,17 @@ public class SignageServlet extends ApiServlet {
             return;
         }
         
-        // HARD MODE: Basic file extension check - blocks .jsp but can be bypassed
+        
         String lowerFilename = filename.toLowerCase().trim();
         if (lowerFilename.endsWith(".jsp")) {
             err(res, 400, "JSP files are not allowed for security reasons");
             return;
         }
-        // VULNERABILITY: Doesn't check for:
-        // - Double extensions like shell.jsp.jpg (Tomcat may still execute)
-        // - Alternative JSP extensions like .jspx, .jspa
-        // - Case variations on case-sensitive filesystems
-        // - Content-based detection (file actually contains JSP code)
+        
+        
+        
+        
+        
         
         File dir = new File(getServletContext().getRealPath("/uploads/templates"));
         if (!dir.isDirectory() && !dir.mkdirs()) {

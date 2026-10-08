@@ -14,11 +14,6 @@ import org.json.JSONObject;
 
 import campus.db.Database;
 
-/**
- * Public orientation directory: students who registered and still need to
- * activate. Shows each pending account's student ID and APPROXIMATE registration
- * time (rounded to nearest hour) - requires brute-force to find exact epoch.
- */
 @WebServlet(urlPatterns = "/api/directory/pending")
 public class DirectoryServlet extends ApiServlet {
 
@@ -31,7 +26,7 @@ public class DirectoryServlet extends ApiServlet {
                      + "FROM users WHERE status='pending' ORDER BY created_at DESC");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                // HARD MODE: Round to nearest hour (3600 seconds) to require brute-force
+                
                 long exactEpoch = rs.getLong("reg_epoch");
                 long approxEpoch = (exactEpoch / 3600) * 3600;
                 out.put(new JSONObject()

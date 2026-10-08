@@ -15,11 +15,6 @@ import campus.db.Database;
 import campus.web.User;
 import campus.util.Passwords;
 
-/**
- * Signup / login / logout.
- * Signup deliberately creates a PENDING account whose activation token is
- * derived deterministically from the student ID and registration time.
- */
 @WebServlet(urlPatterns = "/api/auth")
 public class AuthServlet extends ApiServlet {
 
