@@ -8,8 +8,8 @@
 <div class="tabs">
   <button data-tab="review" class="on">Review queue</button>
   <button data-tab="users">Users &amp; roles</button>
-  <button data-tab="announcements">Announcement templates</button>
-  <button data-tab="signage">Signage templates</button>
+  <button data-tab="announcements">Announcements</button>
+  <button data-tab="signage">Signage</button>
   <button data-tab="audit">Audit log</button>
 </div>
 
@@ -35,13 +35,16 @@
     <thead><tr><th>ID</th><th>Name</th><th>Body</th><th></th></tr></thead>
     <tbody><tr><td colspan="4" class="muted">Loading...</td></tr></tbody>
   </table>
-  <form id="ann-form" style="max-width:36rem">
-    <label for="ann-name">Template name</label>
-    <input type="text" id="ann-name" required>
-    <label for="ann-body">Body (HTML)</label>
-    <textarea id="ann-body" style="min-height:6rem"></textarea>
-    <button type="submit">Add template</button>
-  </form>
+  <div style="margin-top:1.25rem;max-width:36rem;border-top:1px solid var(--border);padding-top:1rem">
+    <h3 style="margin-bottom:0.5rem">Add template</h3>
+    <form id="ann-form">
+      <label for="ann-name">Template name</label>
+      <input type="text" id="ann-name" placeholder="e.g. Welcome banner" required>
+      <label for="ann-body">Body (HTML)</label>
+      <textarea id="ann-body" style="min-height:6rem" placeholder="<p>Template content...</p>"></textarea>
+      <button type="submit">Add template</button>
+    </form>
+  </div>
 </section>
 
 <section id="tab-signage" class="panel" hidden>
@@ -49,15 +52,17 @@
   <p class="muted">Packaged templates live under <span class="code">WEB-INF/templates/signage</span>.
      Uploaded templates are stored under <span class="code">uploads/templates</span> and can be
      previewed by server-side path.</p>
-  <form id="upload-form" style="max-width:36rem">
-    <label for="up-file">Template file</label>
-    <input type="file" id="up-file" required>
-    <button type="submit" id="upload-btn">Upload template</button>
-  </form>
-  <h2>Packaged</h2>
-  <ul id="packaged-list" class="muted"></ul>
-  <h2>Uploaded</h2>
-  <ul id="uploads-list" class="muted"></ul>
+  <div style="max-width:36rem;border:1px dashed var(--border);border-radius:var(--radius-md);padding:1.25rem;margin:1rem 0;text-align:center">
+    <form id="upload-form">
+      <label for="up-file" style="margin-top:0">Upload template file</label>
+      <input type="file" id="up-file" required>
+      <button type="submit" id="upload-btn">Upload</button>
+    </form>
+  </div>
+  <h3>Packaged</h3>
+  <ul id="packaged-list" class="muted" style="padding-left:1.25rem"></ul>
+  <h3>Uploaded</h3>
+  <ul id="uploads-list" class="muted" style="padding-left:1.25rem"></ul>
 </section>
 
 <section id="tab-audit" class="panel" hidden>
@@ -84,9 +89,9 @@ async function loadReview() {
   try {
     var data = await App.api('api/admin/review');
     tbody.innerHTML = data.pending.length ? data.pending.map(function (ev) {
-      return '<tr><td>#' + ev.id + '</td><td>' + App.esc(ev.title) + '</td><td>' + App.esc(ev.organiser)
-        + '</td><td><a class="btn" href="review.jsp?id=' + ev.id + '">Open review</a></td></tr>';
-    }).join('') : '<tr><td colspan="4" class="muted">Queue is empty.</td></tr>';
+      return '<tr><td class="muted">#' + ev.id + '</td><td style="font-weight:500">' + App.esc(ev.title) + '</td><td>' + App.esc(ev.organiser)
+        + '</td><td style="text-align:right"><a class="btn" href="review.jsp?id=' + ev.id + '">Review</a></td></tr>';
+    }).join('') : '<tr><td colspan="4" class="muted" style="text-align:center;padding:1.5rem">Queue is empty.</td></tr>';
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="4" class="muted">' + App.esc(e.message) + '</td></tr>';
   }
@@ -103,9 +108,9 @@ async function loadUsers() {
             return '<option value="' + r + '"' + (r === usr.role ? ' selected' : '') + '>' + r + '</option>';
           }).join('')
         + '</select>';
-      return '<tr><td>#' + usr.id + '</td><td>' + App.esc(usr.username) + '</td><td>' + sel
+      return '<tr><td class="muted">#' + usr.id + '</td><td style="font-weight:500">' + App.esc(usr.username) + '</td><td>' + sel
         + '</td><td><span class="chip ' + App.esc(usr.status) + '">' + App.esc(usr.status) + '</span></td>'
-        + '<td><button class="secondary" data-id="' + usr.id + '">Apply</button></td></tr>';
+        + '<td style="text-align:right"><button class="secondary" data-id="' + usr.id + '">Apply</button></td></tr>';
     }).join('');
     tbody.querySelectorAll('button').forEach(function (b) {
       b.addEventListener('click', async function () {
@@ -128,10 +133,10 @@ async function loadAnnouncements() {
   try {
     var data = await App.api('api/admin/announcements');
     tbody.innerHTML = data.templates.length ? data.templates.map(function (t) {
-      return '<tr><td>#' + t.id + '</td><td>' + App.esc(t.name) + '</td>'
-        + '<td class="muted">' + App.esc(t.body_html.substring(0, 80)) + '</td>'
-        + '<td><button class="danger" data-id="' + t.id + '">Delete</button></td></tr>';
-    }).join('') : '<tr><td colspan="4" class="muted">No templates.</td></tr>';
+      return '<tr><td class="muted">#' + t.id + '</td><td style="font-weight:500">' + App.esc(t.name) + '</td>'
+        + '<td class="muted">' + App.esc(t.body_html.substring(0, 80)) + (t.body_html.length > 80 ? '...' : '') + '</td>'
+        + '<td style="text-align:right"><button class="danger" data-id="' + t.id + '">Delete</button></td></tr>';
+    }).join('') : '<tr><td colspan="4" class="muted" style="text-align:center;padding:1.5rem">No templates.</td></tr>';
     tbody.querySelectorAll('button').forEach(function (b) {
       b.addEventListener('click', async function () {
         try {
@@ -176,12 +181,18 @@ document.getElementById('upload-form').addEventListener('submit', async function
   e.preventDefault();
   var f = document.getElementById('up-file').files[0];
   if (!f) { return; }
+  var btn = document.getElementById('upload-btn');
+  btn.disabled = true;
+  btn.textContent = 'Uploading...';
   try {
     var b64 = await App.fileToB64(f);
     var data = await App.api('api/admin/templates', { filename: f.name, content_b64: b64 });
     App.toast('Uploaded ' + data.path + ' (' + data.size + ' bytes)');
     loadSignage();
+    document.getElementById('upload-form').reset();
   } catch (err) { App.toast(err.message, true); }
+  btn.disabled = false;
+  btn.textContent = 'Upload';
 });
 
 async function loadAudit() {
@@ -190,9 +201,9 @@ async function loadAudit() {
     var data = await App.api('api/admin/audit');
     tbody.innerHTML = data.entries.map(function (a) {
       return '<tr><td class="muted">' + App.esc(a.at.replace('T', ' ').substring(0, 19)) + '</td>'
-        + '<td>' + App.esc(a.actor || '') + '</td><td><span class="code">' + App.esc(a.action)
+        + '<td style="font-weight:500">' + App.esc(a.actor || '') + '</td><td><span class="code">' + App.esc(a.action)
         + '</span></td><td>' + App.esc(a.detail || '') + '</td></tr>';
-    }).join('') || '<tr><td colspan="4" class="muted">No entries.</td></tr>';
+    }).join('') || '<tr><td colspan="4" class="muted" style="text-align:center;padding:1.5rem">No entries.</td></tr>';
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="4" class="muted">' + App.esc(e.message) + '</td></tr>';
   }

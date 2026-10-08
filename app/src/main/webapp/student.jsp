@@ -4,29 +4,30 @@
 %>
 <%@ include file="WEB-INF/jsp/header.jspf" %>
 <h1>My campus</h1>
-<div class="panel" id="profile-panel"><p class="muted">Loading...</p></div>
 
-<div class="panel" style="max-width:34rem">
+<div class="panel" id="profile-panel"><p class="muted">Loading profile...</p></div>
+
+<div class="panel" style="max-width:36rem">
   <h2>Register attendance</h2>
-  <p class="muted">Pick a published event to confirm you are attending.</p>
+  <p class="muted">Select a published event to confirm your attendance.</p>
   <div id="attend-list"></div>
 </div>
 
-<div class="panel" style="max-width:34rem">
+<div class="panel" style="max-width:36rem">
   <h2>Join an event team</h2>
+  <p class="muted">Enter an invite code to join an event team.</p>
   <form id="join-form">
     <label for="join-token">Invite code</label>
     <input type="text" id="join-token" placeholder="INV-..." required>
     <details class="advanced">
-      <summary>Advanced</summary>
+      <summary>Advanced options</summary>
       <label for="join-event">Event ID</label>
-      <input type="text" id="join-event" inputmode="numeric">
+      <input type="text" id="join-event" inputmode="numeric" placeholder="Leave empty to use code's event">
       <label for="join-role">Role</label>
       <select id="join-role">
-        <option value="volunteer">volunteer</option>
-        <option value="organiser">organiser</option>
+        <option value="volunteer">Volunteer</option>
+        <option value="organiser">Organiser</option>
       </select>
-      <p class="muted">Leave Event ID empty to use the code's own event.</p>
     </details>
     <button type="submit" id="join-btn">Join team</button>
   </form>
@@ -41,21 +42,31 @@
 
   async function loadMe() {
     me = await App.api('api/me');
+    var teamInfo = me.teams.length
+      ? me.teams.map(function (t) {
+          return '<span class="chip ' + App.esc(t.role) + '">' + App.esc(t.role) + '</span> '
+            + App.esc(t.title) + ' (event #' + t.event_id + ')';
+        }).join('<br>')
+      : '<span class="muted">Not on any team yet</span>';
+    var attendInfo = me.attending.length
+      ? me.attending.map(function (a) { return App.esc(a.title); }).join(', ')
+      : '<span class="muted">Not attending any events</span>';
+
     profile.innerHTML =
-      '<h2 style="margin-top:0">' + App.esc(me.username) + '</h2>'
-      + '<p class="muted">Account #' + me.id + ' &middot; role <span class="chip '
+      '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">'
+      + '<div style="width:40px;height:40px;border-radius:50%;background:var(--primary-100);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--primary-700);font-size:1.1rem">'
+      + App.esc(me.username.charAt(0).toUpperCase()) + '</div>'
+      + '<div><h2 style="margin:0">' + App.esc(me.username) + '</h2>'
+      + '<p class="muted" style="margin:0">Account #' + me.id + ' &middot; <span class="chip '
       + App.esc(me.role) + '">' + App.esc(me.role) + '</span>'
-      + (me.student_id ? ' &middot; ' + App.esc(me.student_id) : '') + '</p>'
-      + (me.teams.length
-          ? '<p>Teams: ' + me.teams.map(function (t) {
-              return App.esc(t.title) + ' (' + App.esc(t.role) + ', event #' + t.event_id + ')';
-            }).join(' &middot; ') + '</p>'
-          : '')
-      + (me.attending.length
-          ? '<p>Attending: ' + me.attending.map(function (a) { return App.esc(a.title); }).join(' &middot; ') + '</p>'
-          : '');
+      + (me.student_id ? ' &middot; ' + App.esc(me.student_id) : '') + '</p></div></div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem">'
+      + '<div><p class="muted" style="margin:0 0 0.25rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em">Teams</p>' + teamInfo + '</div>'
+      + '<div><p class="muted" style="margin:0 0 0.25rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em">Attending</p>' + attendInfo + '</div>'
+      + '</div>';
+
     if (me.role !== 'student') {
-      attendList.innerHTML = '<p class="muted">Attendance registration is for student accounts.</p>';
+      attendList.innerHTML = '<p class="muted">Attendance registration is for student accounts only.</p>';
     }
   }
 
@@ -63,13 +74,14 @@
   try {
     events = (await App.api('api/events')).events;
   } catch (e) { events = []; }
+
   function renderAttend() {
     var attending = new Set((me ? me.attending : []).map(function (a) { return a.id; }));
     attendList.innerHTML = events.map(function (ev) {
-      return '<div style="display:flex;align-items:center;gap:0.6rem;margin:0.35rem 0">'
-        + '<span style="flex:1">' + App.esc(ev.title) + '</span>'
+      return '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--border)">'
+        + '<span style="flex:1;font-weight:500">' + App.esc(ev.title) + '</span>'
         + (attending.has(ev.id)
-            ? '<span class="chip active">attending</span>'
+            ? '<span class="chip active">Attending</span>'
             : '<button class="secondary" data-id="' + ev.id + '">Attend</button>')
         + '</div>';
     }).join('') || '<p class="muted">No published events.</p>';
@@ -96,7 +108,7 @@
       var info = await App.api('api/team?token=' + encodeURIComponent(joinToken.value));
       joinEvent.value = String(info.event_id);
       joinRole.value = info.allowed_role;
-      joinMsg.textContent = 'Code is for "' + info.event_title + '" (role: ' + info.allowed_role + ').';
+      joinMsg.innerHTML = 'Code valid for <strong>' + App.esc(info.event_title) + '</strong> (role: ' + App.esc(info.allowed_role) + ')';
     } catch (e) {
       joinMsg.textContent = e.message;
     }
@@ -108,7 +120,7 @@
     if (joinEvent.value) { payload.event_id = parseInt(joinEvent.value, 10); }
     try {
       var data = await App.api('api/team', payload);
-      joinMsg.textContent = 'Joined event #' + data.event_id + ' as ' + data.role + '.';
+      joinMsg.innerHTML = 'Joined event #' + data.event_id + ' as <strong>' + App.esc(data.role) + '</strong>';
       App.toast('Joined event #' + data.event_id + ' as ' + data.role);
       if (data.your_role === 'organiser') {
         setTimeout(function () { location.href = 'organiser.jsp'; }, 1200);
@@ -126,7 +138,7 @@
     await loadMe();
     renderAttend();
   } catch (e) {
-    profile.innerHTML = '<p class="muted">' + App.esc(e.message) + '</p>';
+    profile.innerHTML = '<div class="empty-state"><p>' + App.esc(e.message) + '</p></div>';
   }
 })();
 </script>

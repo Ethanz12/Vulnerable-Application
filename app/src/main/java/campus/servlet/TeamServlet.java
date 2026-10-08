@@ -73,8 +73,23 @@ public class TeamServlet extends ApiServlet {
         }
 
         try (Connection c = Database.get()) {
-            // Only validates that the token exists at all; never checks that it
-            // belongs to the submitted event or that the role is permitted.
+            // HARD MODE: Added partial validation - checks event exists and role is valid
+            // But still doesn't validate that the invite belongs to the event (IDOR remains)
+            
+            // Check 1: Event must exist
+            boolean eventExists;
+            try (PreparedStatement ps = c.prepareStatement("SELECT 1 FROM events WHERE id=?")) {
+                ps.setInt(1, eventId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    eventExists = rs.next();
+                }
+            }
+            if (!eventExists) {
+                err(res, 404, "Event not found");
+                return;
+            }
+            
+            // Check 2: Invite token must exist
             boolean tokenExists;
             try (PreparedStatement ps = c.prepareStatement("SELECT 1 FROM invitations WHERE token=?")) {
                 ps.setString(1, token.trim());
@@ -86,6 +101,15 @@ public class TeamServlet extends ApiServlet {
                 err(res, 403, "Invalid invite code");
                 return;
             }
+            
+            // Check 3: Role must be one of the allowed values
+            if (!role.matches("student|volunteer|organiser")) {
+                err(res, 400, "Invalid role. Must be student, volunteer, or organiser");
+                return;
+            }
+            
+            // VULNERABILITY: Still doesn't check that token belongs to this event!
+            // Attacker can use any valid invite code with any event_id
 
             try (PreparedStatement ps = c.prepareStatement(
                     "INSERT INTO event_team (event_id, user_id, role) VALUES (?, ?, ?) "
