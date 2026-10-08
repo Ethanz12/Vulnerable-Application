@@ -5,13 +5,16 @@
 %>
 <%@ include file="WEB-INF/jsp/header.jspf" %>
 <h1>Organiser workspace</h1>
+
 <div class="panel">
-  <h2>My events</h2>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+    <h2 style="margin:0">My events</h2>
+    <button id="new-event-btn">+ New event</button>
+  </div>
   <table id="events-table">
     <thead><tr><th>ID</th><th>Title</th><th>Status</th><th></th></tr></thead>
     <tbody><tr><td colspan="4" class="muted">Loading...</td></tr></tbody>
   </table>
-  <button id="new-event-btn">New event</button>
 </div>
 
 <div class="panel" id="editor-panel" hidden>
@@ -19,17 +22,18 @@
   <form id="editor-form">
     <input type="hidden" id="ev-id">
     <label for="ev-title">Title</label>
-    <input type="text" id="ev-title" required>
+    <input type="text" id="ev-title" placeholder="Event title" required>
     <label for="ev-location">Location</label>
-    <input type="text" id="ev-location">
-    <label for="ev-starts">Starts (UTC)</label>
+    <input type="text" id="ev-location" placeholder="Campus building or room">
+    <label for="ev-starts">Starts at (UTC)</label>
     <input type="datetime-local" id="ev-starts">
     <label for="ev-description">Description (rich text)</label>
     <textarea id="ev-description" name="description"></textarea>
-    <button type="submit" id="save-btn">Save</button>
-    <button type="button" class="secondary" id="submit-review-btn">Submit for administrator review</button>
-    <p class="muted">Submitting notifies the administrator review service, which opens the
-      draft in an authenticated review session.</p>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+      <button type="submit" id="save-btn">Save draft</button>
+      <button type="button" class="secondary" id="submit-review-btn">Submit for review</button>
+    </div>
+    <p class="muted" style="margin-top:0.5rem">Submitting notifies the administrator review service, which opens the draft in an authenticated review session.</p>
   </form>
 </div>
 <script src="static/vendor/ckeditor/ckeditor.js"></script>
@@ -44,12 +48,12 @@ async function loadEvents() {
   try {
     var data = await App.api('api/organiser');
     if (!data.events.length) {
-      eventsTable.innerHTML = '<tr><td colspan="4" class="muted">No events yet - create one.</td></tr>';
+      eventsTable.innerHTML = '<tr><td colspan="4" class="muted" style="text-align:center;padding:1.5rem">No events yet — create your first one.</td></tr>';
       return;
     }
     eventsTable.innerHTML = data.events.map(function (ev) {
-      return '<tr><td>#' + ev.id + '</td><td>' + App.esc(ev.title) + '</td><td>' + statusChip(ev.status)
-        + '</td><td><button class="secondary" data-id="' + ev.id + '">Edit</button></td></tr>';
+      return '<tr><td class="muted">#' + ev.id + '</td><td style="font-weight:500">' + App.esc(ev.title) + '</td><td>' + statusChip(ev.status)
+        + '</td><td style="text-align:right"><button class="secondary" data-id="' + ev.id + '">Edit</button></td></tr>';
     }).join('');
     eventsTable.querySelectorAll('button').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -64,6 +68,7 @@ async function loadEvents() {
 
 function openEditor(ev) {
   document.getElementById('editor-panel').hidden = false;
+  document.getElementById('editor-panel').scrollIntoView({ behavior: 'smooth' });
   document.getElementById('editor-title').textContent = ev ? 'Edit event #' + ev.id : 'New event';
   document.getElementById('ev-id').value = ev ? ev.id : '';
   document.getElementById('ev-title').value = ev ? ev.title : '';
@@ -91,6 +96,9 @@ document.getElementById('new-event-btn').addEventListener('click', function () {
 
 document.getElementById('editor-form').addEventListener('submit', async function (e) {
   e.preventDefault();
+  var btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
   var payload = {
     action: 'save',
     event_id: document.getElementById('ev-id').value || '',
@@ -105,6 +113,8 @@ document.getElementById('editor-form').addEventListener('submit', async function
     App.toast('Event saved');
     loadEvents();
   } catch (err) { App.toast(err.message, true); }
+  btn.disabled = false;
+  btn.textContent = 'Save draft';
 });
 
 document.getElementById('submit-review-btn').addEventListener('click', async function () {
@@ -112,7 +122,7 @@ document.getElementById('submit-review-btn').addEventListener('click', async fun
   if (!id) { App.toast('Save the event first', true); return; }
   try {
     await App.api('api/organiser', { action: 'submit', event_id: parseInt(id, 10) });
-    App.toast('Submitted for review - the administrator review service has been notified');
+    App.toast('Submitted for review — administrator has been notified');
     loadEvents();
   } catch (err) { App.toast(err.message, true); }
 });

@@ -4,8 +4,10 @@
     if (!pageUser.isAdmin()) { response.sendRedirect("index.jsp"); return; }
 %>
 <%@ include file="WEB-INF/jsp/header.jspf" %>
-<h1>Event review</h1>
-<div class="panel" id="review-panel"><p class="muted">Loading...</p></div>
+<div style="margin-bottom:1rem">
+  <a href="admin.jsp" style="font-size:0.85rem;color:var(--text-secondary)">&larr; Back to administration</a>
+</div>
+<div class="panel" id="review-panel"><p class="muted">Loading event...</p></div>
 <script src="static/js/app.js"></script>
 <script>
 (async function () {
@@ -14,17 +16,20 @@
   try {
     var data = await App.api('api/admin/review?id=' + encodeURIComponent(id));
     var ev = data.event;
-    // Administrator review renders the submitted rich text as-is.
     panel.innerHTML =
-      '<h2 style="margin-top:0">' + App.esc(ev.title) + '</h2>'
-      + '<p class="muted">Event #' + ev.id + ' &middot; by ' + App.esc(ev.organiser)
-      + ' &middot; status ' + App.esc(ev.status) + '</p>'
-      + '<div id="review-desc" class="event-desc">' + ev.description_html + '</div>'
+      '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem">'
+      + '<h1 style="margin:0">' + App.esc(ev.title) + '</h1>'
+      + '<span class="chip ' + App.esc(ev.status) + '">' + App.esc(ev.status.replace('_', ' ')) + '</span>'
+      + '</div>'
+      + '<p class="muted" style="margin-bottom:1.25rem">Event #' + ev.id + ' &middot; by ' + App.esc(ev.organiser) + '</p>'
+      + '<div id="review-desc" class="event-desc" style="border-top:1px solid var(--border);padding-top:1rem">' + ev.description_html + '</div>'
       + (ev.status === 'pending_review'
-          ? '<button id="approve-btn">Approve and publish</button> '
+          ? '<div style="display:flex;gap:0.5rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">'
+            + '<button id="approve-btn">Approve &amp; publish</button>'
             + '<button id="reject-btn" class="danger">Reject</button>'
+            + '</div>'
           : '');
-    document.title = 'Review: ' + ev.title + ' - Campus Events';
+    document.title = 'Review: ' + ev.title + ' — Campus Events';
     var approve = document.getElementById('approve-btn');
     var reject = document.getElementById('reject-btn');
     if (approve) {
@@ -32,7 +37,7 @@
       reject.addEventListener('click', function () { decide('reject'); });
     }
   } catch (e) {
-    panel.innerHTML = '<p class="muted">' + App.esc(e.message) + '</p>';
+    panel.innerHTML = '<div class="empty-state"><p>' + App.esc(e.message) + '</p></div>';
   }
 
   async function decide(action) {

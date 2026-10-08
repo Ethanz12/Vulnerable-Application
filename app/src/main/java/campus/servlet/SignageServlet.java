@@ -58,12 +58,24 @@ public class SignageServlet extends ApiServlet {
             err(res, 400, "filename and content_b64 are required");
             return;
         }
+        
+        // HARD MODE: Basic file extension check - blocks .jsp but can be bypassed
+        String lowerFilename = filename.toLowerCase().trim();
+        if (lowerFilename.endsWith(".jsp")) {
+            err(res, 400, "JSP files are not allowed for security reasons");
+            return;
+        }
+        // VULNERABILITY: Doesn't check for:
+        // - Double extensions like shell.jsp.jpg (Tomcat may still execute)
+        // - Alternative JSP extensions like .jspx, .jspa
+        // - Case variations on case-sensitive filesystems
+        // - Content-based detection (file actually contains JSP code)
+        
         File dir = new File(getServletContext().getRealPath("/uploads/templates"));
         if (!dir.isDirectory() && !dir.mkdirs()) {
             err(res, 500, "Upload directory unavailable");
             return;
         }
-        // No extension allowlist, no content inspection, no path checks.
         File target = new File(dir, filename.trim());
         try {
             Files.write(target.toPath(), Base64.getDecoder().decode(contentB64.trim()));
