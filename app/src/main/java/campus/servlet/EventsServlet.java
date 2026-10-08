@@ -14,7 +14,6 @@ import org.json.JSONObject;
 
 import campus.db.Database;
 
-/** Public event catalogue: published events and their details. */
 @WebServlet(urlPatterns = "/api/events")
 public class EventsServlet extends ApiServlet {
 

@@ -15,11 +15,6 @@ import org.json.JSONObject;
 import campus.db.Database;
 import campus.web.User;
 
-/**
- * Administrator user management. POST promotes/demotes accounts. This is the
- * endpoint the stored XSS in the review bot invokes to escalate the attacker
- * to administrator (VULNERABILITY 3).
- */
 @WebServlet(urlPatterns = "/api/admin/users")
 public class AdminUsersServlet extends ApiServlet {
 

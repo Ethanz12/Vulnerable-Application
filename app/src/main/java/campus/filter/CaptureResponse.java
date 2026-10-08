@@ -10,7 +10,6 @@ import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
-/** Captures the response body so the envelope filter can encrypt it. */
 public class CaptureResponse extends HttpServletResponseWrapper {
 
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();

@@ -16,7 +16,6 @@ import campus.db.Database;
 import campus.util.HtmlSanitizer;
 import campus.web.User;
 
-/** Reusable announcement templates maintained by administrators. */
 @WebServlet(urlPatterns = "/api/admin/announcements")
 public class AnnouncementsServlet extends ApiServlet {
 
@@ -68,7 +67,7 @@ public class AnnouncementsServlet extends ApiServlet {
             err(res, 400, "Name is required");
             return;
         }
-        // Sanitize HTML body to prevent stored XSS
+        
         String sanitizedBody = HtmlSanitizer.sanitize(body == null ? "" : body);
         try (Connection c = Database.get();
              PreparedStatement ps = c.prepareStatement(

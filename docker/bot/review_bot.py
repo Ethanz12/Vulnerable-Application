@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """Admin review bot for the Campus Events training lab.
 
 Runs inside the isolated lab (docker compose service `bot`). It exposes a
@@ -15,7 +15,6 @@ Endpoints (port 5000):
     GET  /status   -> queue depth + recent job history
     POST /review   -> {"event_id": 2}  enqueue a review job (requires X-Bot-Token)
     POST /reset    -> drop queued jobs and clear history (requires X-Bot-Token)
-"""
 
 import json
 import os
@@ -67,7 +66,6 @@ def screenshot_path(prefix):
 
 
 def run_review(event_id):
-    """Sign in as admin, open review page for event_id, screenshot it."""
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
@@ -107,7 +105,7 @@ def worker():
                     if job["kind"] == "review":
                         result = run_review(job["event_id"])
                     break
-                except Exception as exc:  # noqa: BLE001 - keep the bot alive
+                except Exception as exc:
                     last_err = f"{type(exc).__name__}: {exc}"
                     log(f"job {job['id']} attempt {attempt}/{MAX_ATTEMPTS} "
                         f"failed: {last_err}")
@@ -163,7 +161,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/review":
             try:
                 event_id = int(self._body()["event_id"])
-            except Exception:  # noqa: BLE001
+            except Exception:
                 self._send(400, {"ok": False,
                                  "error": "body must be {\"event_id\": <int>}"})
                 return

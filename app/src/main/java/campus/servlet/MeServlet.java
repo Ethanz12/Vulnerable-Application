@@ -15,7 +15,6 @@ import org.json.JSONObject;
 import campus.db.Database;
 import campus.web.User;
 
-/** Current session profile plus team memberships and attendance. */
 @WebServlet(urlPatterns = "/api/me")
 public class MeServlet extends ApiServlet {
 

@@ -1,11 +1,5 @@
 package campus.crypto;
 
-/**
- * RC4 as used by the application envelope. Deliberately weak by design:
- * a single static key (see app.properties) is shared by the server and the
- * browser, and the keystream restarts for every message.
- * SECURITY TRAINING LAB ONLY.
- */
 public final class Rc4 {
 
     private Rc4() {}

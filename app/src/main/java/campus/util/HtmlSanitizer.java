@@ -6,14 +6,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Whitelist-based HTML sanitizer that strips dangerous tags, attributes, and
- * URI schemes while preserving safe formatting elements.
- *
- * Allowed tags: p, h1, h2, h3, strong, em, b, i, u, ul, ol, li, br, a
- * Allowed attributes: href (on <a> only, validated for safe URIs)
- * Blocked: script, event handlers (on*), javascript:/vbscript:/data: URIs
- */
 public final class HtmlSanitizer {
 
     private static final Set<String> ALLOWED_TAGS = new HashSet<>(Arrays.asList(
@@ -26,25 +18,19 @@ public final class HtmlSanitizer {
     private static final Pattern SCRIPT_TAG_PATTERN = Pattern.compile("<\\s*/?\\s*script[^>]*>", Pattern.CASE_INSENSITIVE);
 
     private HtmlSanitizer() {
-        // Utility class - prevent instantiation
+        
     }
 
-    /**
-     * Sanitizes HTML input by removing dangerous tags and attributes while
-     * preserving safe formatting elements.
-     *
-     * @param html the raw HTML input
-     * @return sanitized HTML containing only allowed tags with no dangerous attributes
-     */
+    
     public static String sanitize(String html) {
         if (html == null || html.isEmpty()) {
             return "";
         }
 
-        // Step 1: Remove script tags entirely
+        
         String result = SCRIPT_TAG_PATTERN.matcher(html).replaceAll("");
 
-        // Step 2: Process remaining tags through whitelist
+        
         result = processTags(result);
 
         return result;
@@ -56,7 +42,7 @@ public final class HtmlSanitizer {
         int lastEnd = 0;
 
         while (matcher.find()) {
-            // Append text before this tag
+            
             sb.append(html.substring(lastEnd, matcher.start()));
 
             String slash = matcher.group(1);
@@ -92,7 +78,7 @@ public final class HtmlSanitizer {
             return cleanAnchorAttributes(attrs);
         }
 
-        // For all other allowed tags, strip all attributes
+        
         return "";
     }
 

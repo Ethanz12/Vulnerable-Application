@@ -9,13 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import campus.web.User;
 
-/**
- * VULNERABILITY 4 (dispatch half): signage template preview forwards the raw
- * user-supplied path to the JSP dispatcher with no canonicalisation, no
- * path-traversal checks and no allowlist. Uploaded .jsp files execute in the
- * Tomcat process when previewed, e.g.
- *   /admin/templates/preview?path=../uploads/templates/shell.jsp
- */
 @WebServlet(urlPatterns = "/admin/templates/preview")
 public class PreviewServlet extends ApiServlet {
 

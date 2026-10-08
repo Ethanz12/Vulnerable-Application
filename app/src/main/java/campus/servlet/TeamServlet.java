@@ -14,13 +14,6 @@ import org.json.JSONObject;
 import campus.db.Database;
 import campus.web.User;
 
-/**
- * VULNERABILITY 2: broken access control / IDOR on event-team membership.
- * The handler only confirms that SOME invitation token exists, then trusts
- * the client-supplied event_id and role verbatim. A student can submit a
- * valid volunteer code together with another event's id and role=organiser,
- * joining (and escalating to) an event they do not own.
- */
 @WebServlet(urlPatterns = "/api/team")
 public class TeamServlet extends ApiServlet {
 
@@ -73,10 +66,10 @@ public class TeamServlet extends ApiServlet {
         }
 
         try (Connection c = Database.get()) {
-            // HARD MODE: Added partial validation - checks event exists and role is valid
-            // But still doesn't validate that the invite belongs to the event (IDOR remains)
             
-            // Check 1: Event must exist
+            
+            
+            
             boolean eventExists;
             try (PreparedStatement ps = c.prepareStatement("SELECT 1 FROM events WHERE id=?")) {
                 ps.setInt(1, eventId);
@@ -89,7 +82,7 @@ public class TeamServlet extends ApiServlet {
                 return;
             }
             
-            // Check 2: Invite token must exist
+            
             boolean tokenExists;
             try (PreparedStatement ps = c.prepareStatement("SELECT 1 FROM invitations WHERE token=?")) {
                 ps.setString(1, token.trim());
@@ -102,14 +95,14 @@ public class TeamServlet extends ApiServlet {
                 return;
             }
             
-            // Check 3: Role must be one of the allowed values
+            
             if (!role.matches("student|volunteer|organiser")) {
                 err(res, 400, "Invalid role. Must be student, volunteer, or organiser");
                 return;
             }
             
-            // VULNERABILITY: Still doesn't check that token belongs to this event!
-            // Attacker can use any valid invite code with any event_id
+            
+            
 
             try (PreparedStatement ps = c.prepareStatement(
                     "INSERT INTO event_team (event_id, user_id, role) VALUES (?, ?, ?) "

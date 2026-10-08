@@ -21,7 +21,7 @@ public final class Passwords {
         }
     }
 
-    /** Weak, documented activation-token derivation: MD5("ACTIVATE:<student_id>:<epoch>")[:8]. */
+    
     public static String activationToken(String studentId, long epochSeconds) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");

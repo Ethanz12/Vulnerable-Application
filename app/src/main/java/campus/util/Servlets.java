@@ -18,8 +18,7 @@ public final class Servlets {
 
     private Servlets() {}
 
-    /** Session user, refreshed from the database so role changes apply to
-     *  the live session instead of only after the next login. */
+    
     public static User user(HttpServletRequest req) {
         HttpSession s = req.getSession(false);
         if (s == null) {
@@ -72,7 +71,7 @@ public final class Servlets {
                 }
                 conn.getResponseCode();
             } catch (Exception ignored) {
-                // The bot is an out-of-band convenience; review stays queued regardless.
+                
             }
         }, "bot-notify");
         t.setDaemon(true);

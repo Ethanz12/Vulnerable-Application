@@ -14,13 +14,6 @@ import org.json.JSONObject;
 import campus.db.Database;
 import campus.util.Passwords;
 
-/**
- * VULNERABILITY 1: account activation.
- * The activation token is a deterministic function of the student ID and the
- * registration timestamp (MD5("ACTIVATE:<student_id>:<epoch>")[0:8]). Those
- * two inputs are exposed publicly on the orientation directory, so anyone can
- * compute the token for a pending account and take it over.
- */
 @WebServlet(urlPatterns = "/api/activate")
 public class ActivateServlet extends ApiServlet {
 
