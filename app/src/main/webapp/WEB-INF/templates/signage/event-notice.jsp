@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
-<%@ page import="java.sql.*, campus.db.Database" %>
+<%@ page import="java.sql.*, campus.db.Database, campus.util.HtmlEscape" %>
 <%
     String heading = request.getParameter("heading");
     String annParam = request.getParameter("announcement");
@@ -33,7 +33,7 @@
 </head>
 <body class="signage signage-notice">
   <main>
-    <h1><%= heading %></h1>
+    <h1><%= HtmlEscape.escape(heading) %></h1>
     <div class="signage-body"><%= body %></div>
     <p class="signage-footer">Campus Digital Signage &middot; event-notice.jsp</p>
   </main>

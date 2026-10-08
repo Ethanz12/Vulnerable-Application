@@ -36,7 +36,7 @@ public class AttendanceServlet extends ApiServlet {
             ps.setInt(2, u.getId());
             ps.executeUpdate();
         } catch (Exception e) {
-            err(res, 500, "Could not record attendance: " + e.getMessage());
+            err(res, 500, "Could not record attendance");
             return;
         }
         ok(res, null);

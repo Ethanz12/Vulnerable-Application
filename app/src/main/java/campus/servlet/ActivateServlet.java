@@ -45,7 +45,7 @@ public class ActivateServlet extends ApiServlet {
                         .put("student_id", rs.getString("student_id")));
             }
         } catch (Exception e) {
-            err(res, 500, "Lookup failed: " + e.getMessage());
+            err(res, 500, "Lookup failed");
         }
     }
 
@@ -79,7 +79,7 @@ public class ActivateServlet extends ApiServlet {
             }
             ok(res, new JSONObject().put("redirect", "login.jsp").put("username", username));
         } catch (Exception e) {
-            err(res, 500, "Activation failed: " + e.getMessage());
+            err(res, 500, "Activation failed");
         }
     }
 }

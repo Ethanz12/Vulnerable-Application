@@ -83,7 +83,7 @@ public class SignageServlet extends ApiServlet {
             err(res, 400, "content_b64 is not valid base64");
             return;
         } catch (IOException e) {
-            err(res, 500, "Could not write file: " + e.getMessage());
+            err(res, 500, "Could not write file");
             return;
         }
         try (java.sql.Connection ignore = campus.db.Database.get();

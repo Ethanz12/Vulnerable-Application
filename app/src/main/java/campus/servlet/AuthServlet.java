@@ -95,7 +95,7 @@ public class AuthServlet extends ApiServlet {
                 ok(res, new JSONObject().put("redirect", redirect).put("role", u.getRole()));
             }
         } catch (Exception e) {
-            err(res, 500, "Login failed: " + e.getMessage());
+            err(res, 500, "Login failed");
         }
     }
 }

@@ -45,7 +45,7 @@ public class AdminUsersServlet extends ApiServlet {
             }
             ok(res, new JSONObject().put("users", out));
         } catch (Exception e) {
-            err(res, 500, "Users unavailable: " + e.getMessage());
+            err(res, 500, "Users unavailable");
         }
     }
 
@@ -89,7 +89,7 @@ public class AdminUsersServlet extends ApiServlet {
         } catch (NumberFormatException e) {
             err(res, 400, "Invalid user id");
         } catch (Exception e) {
-            err(res, 500, "Role change failed: " + e.getMessage());
+            err(res, 500, "Role change failed");
         }
     }
 }

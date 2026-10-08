@@ -30,7 +30,7 @@ public class EventsServlet extends ApiServlet {
         } catch (NumberFormatException e) {
             err(res, 400, "Invalid event id");
         } catch (Exception e) {
-            err(res, 500, "Events unavailable: " + e.getMessage());
+            err(res, 500, "Events unavailable");
         }
     }
 

@@ -41,7 +41,7 @@ public class DirectoryServlet extends ApiServlet {
                         .put("note", "Registration time approximate (within 1 hour window)"));
             }
         } catch (Exception e) {
-            err(res, 500, "Directory unavailable: " + e.getMessage());
+            err(res, 500, "Directory unavailable");
             return;
         }
         ok(res, new JSONObject().put("pending", out));

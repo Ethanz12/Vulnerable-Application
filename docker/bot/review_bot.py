@@ -13,10 +13,8 @@ administrator.
 Endpoints (port 5000):
     GET  /health   -> {"ok": true}
     GET  /status   -> queue depth + recent job history
-    POST /review   -> {"event_id": 2}  enqueue a review job
-    POST /snap     -> {"url": "http://web:8080/campus-events/login.jsp"}
-                      debug screenshot of any lab URL (no login)
-    POST /reset    -> drop queued jobs and clear history
+    POST /review   -> {"event_id": 2}  enqueue a review job (requires X-Bot-Token)
+    POST /reset    -> drop queued jobs and clear history (requires X-Bot-Token)
 """
 
 import json
@@ -25,6 +23,7 @@ import queue
 import sys
 import threading
 import time
+import secrets
 import uuid
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -37,6 +36,8 @@ ADMIN_PASS = os.environ.get("ADMIN_PASS", "Admin#2026!")
 SCREENSHOT_DIR = os.environ.get("SCREENSHOT_DIR", "/bot/screenshots")
 RENDER_WAIT_MS = int(os.environ.get("RENDER_WAIT_MS", "2500"))
 MAX_ATTEMPTS = int(os.environ.get("MAX_ATTEMPTS", "3"))
+
+BOT_TOKEN = secrets.token_hex(32)
 
 JOBS = queue.Queue()
 HISTORY = []
@@ -68,7 +69,7 @@ def screenshot_path(prefix):
 def run_review(event_id):
     """Sign in as admin, open review page for event_id, screenshot it."""
     with sync_playwright() as p:
-        browser = p.chromium.launch(args=["--no-sandbox"])
+        browser = p.chromium.launch()
         try:
             page = browser.new_page(viewport={"width": 1440, "height": 1000})
 
@@ -78,7 +79,7 @@ def run_review(event_id):
             page.fill("#password", ADMIN_PASS)
             page.click("#login-btn")
             page.wait_for_url("**/admin.jsp", timeout=30000)
-            log(f"logged in as {ADMIN_USER}")
+            log("logged in as admin")
 
             page.goto(f"{APP_URL}/review.jsp?id={event_id}",
                       wait_until="load", timeout=30000)
@@ -93,20 +94,6 @@ def run_review(event_id):
             browser.close()
 
 
-def run_snap(url):
-    """Debug helper: screenshot any lab URL without logging in."""
-    with sync_playwright() as p:
-        browser = p.chromium.launch(args=["--no-sandbox"])
-        try:
-            page = browser.new_page(viewport={"width": 1440, "height": 1000})
-            page.goto(url, wait_until="load", timeout=30000)
-            page.wait_for_timeout(RENDER_WAIT_MS)
-            path = screenshot_path("snap")
-            page.screenshot(path=path, full_page=True)
-            log(f"screenshot saved: {path}")
-            return {"screenshot": path}
-        finally:
-            browser.close()
 
 
 def worker():
@@ -119,8 +106,6 @@ def worker():
                 try:
                     if job["kind"] == "review":
                         result = run_review(job["event_id"])
-                    else:
-                        result = run_snap(job["url"])
                     break
                 except Exception as exc:  # noqa: BLE001 - keep the bot alive
                     last_err = f"{type(exc).__name__}: {exc}"
@@ -137,7 +122,7 @@ def worker():
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CampusReviewBot/1.0"
+    server_version = "Python/3.x"
 
     def _send(self, code, payload):
         body = json.dumps(payload).encode()
@@ -152,6 +137,13 @@ class Handler(BaseHTTPRequestHandler):
         raw = self.rfile.read(length) if length else b"{}"
         return json.loads(raw.decode() or "{}")
 
+    def _check_auth(self):
+        token = self.headers.get("X-Bot-Token")
+        if token != BOT_TOKEN:
+            self._send(401, {"ok": False, "error": "unauthorized"})
+            return False
+        return True
+
     def do_GET(self):
         if self.path == "/health":
             self._send(200, {"ok": True})
@@ -159,7 +151,6 @@ class Handler(BaseHTTPRequestHandler):
             with HISTORY_LOCK:
                 history = list(HISTORY[-20:])
             self._send(200, {
-                "app_url": APP_URL,
                 "queued": JOBS.qsize(),
                 "history": history,
             })
@@ -167,6 +158,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"ok": False, "error": "not found"})
 
     def do_POST(self):
+        if not self._check_auth():
+            return
         if self.path == "/review":
             try:
                 event_id = int(self._body()["event_id"])
@@ -179,15 +172,6 @@ class Handler(BaseHTTPRequestHandler):
                    "queued_at": datetime.now(timezone.utc).isoformat()}
             JOBS.put(job)
             log(f"queued review of event {event_id} as job {job['id']}")
-            self._send(202, {"ok": True, "job": job["id"]})
-        elif self.path == "/snap":
-            url = self._body().get("url")
-            if not url:
-                self._send(400, {"ok": False, "error": "url required"})
-                return
-            job = {"id": uuid.uuid4().hex[:8], "kind": "snap", "url": url,
-                   "queued_at": datetime.now(timezone.utc).isoformat()}
-            JOBS.put(job)
             self._send(202, {"ok": True, "job": job["id"]})
         elif self.path == "/reset":
             drained = 0
@@ -214,7 +198,7 @@ def main():
     threading.Thread(target=worker, daemon=True).start()
     port = int(os.environ.get("BOT_PORT", "5000"))
     server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
-    log(f"review bot up on :{port} (app={APP_URL}, admin={ADMIN_USER})")
+    log(f"review bot up on :{port} (app={APP_URL}, token={BOT_TOKEN})")
     server.serve_forever()
 
 

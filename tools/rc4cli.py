@@ -6,11 +6,11 @@ This tool encrypts/decrypts envelopes offline and can also drive full HTTP
 round trips against the running lab, decrypting responses for you.
 
 Examples:
-    echo '{"action":"login","username":"admin","password":"Admin#2026!"}' \
+    echo '{"action":"login","username":"admin","password":"<password>"}' \
         | python3 tools/rc4cli.py encrypt
 
     python3 tools/rc4cli.py request --jar /tmp/admin.jar \
-        --data '{"action":"login","username":"admin","password":"Admin#2026!"}' \
+        --data '{"action":"login","username":"admin","password":"<password>"}' \
         api/auth
 
     python3 tools/rc4cli.py request --jar /tmp/admin.jar api/admin/users
