@@ -56,6 +56,7 @@ public final class Servlets {
 
     public static void notifyBot(int eventId) {
         String hook = Config.get("bot.webhook", "BOT_WEBHOOK");
+        String token = Config.get("bot.token", "BOT_TOKEN");
         Thread t = new Thread(() -> {
             try {
                 HttpURLConnection conn = (HttpURLConnection) new URL(hook).openConnection();
@@ -64,6 +65,9 @@ public final class Servlets {
                 conn.setReadTimeout(2000);
                 conn.setDoOutput(true);
                 conn.setRequestProperty("Content-Type", "application/json");
+                if (token != null && !token.isBlank()) {
+                    conn.setRequestProperty("X-Bot-Token", token);
+                }
                 byte[] body = ("{\"event_id\":" + eventId + "}").getBytes(StandardCharsets.UTF_8);
                 conn.setFixedLengthStreamingMode(body.length);
                 try (OutputStream out = conn.getOutputStream()) {

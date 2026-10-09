@@ -23,6 +23,7 @@ services:
       DB_USER: campus
       DB_PASS: campus
       BOT_WEBHOOK: http://bot:5000/review
+      BOT_TOKEN: lab-bot-token-890d7ba8d41377626cceaa03f0ab67f1b245d8b6e57d156f66a0e7092b62f3cf
     depends_on:
       db:
         condition: service_healthy
@@ -35,6 +36,7 @@ services:
       APP_URL: http://web:8080/campus-events
       ADMIN_USER: admin
       ADMIN_PASS: Admin#2026!
+      BOT_TOKEN: lab-bot-token-890d7ba8d41377626cceaa03f0ab67f1b245d8b6e57d156f66a0e7092b62f3cf
     volumes:
       - ./screenshots:/bot/screenshots
     depends_on:
