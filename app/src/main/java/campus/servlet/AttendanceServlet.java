@@ -27,6 +27,23 @@ public class AttendanceServlet extends ApiServlet {
             err(res, 400, "event_id required");
             return;
         }
+        if ("cancel".equals(req.getParameter("action"))) {
+            try (Connection c = Database.get();
+                 PreparedStatement ps = c.prepareStatement(
+                         "DELETE FROM attendance WHERE event_id=? AND user_id=?")) {
+                ps.setInt(1, eventId);
+                ps.setInt(2, u.getId());
+                if (ps.executeUpdate() == 0) {
+                    err(res, 404, "You are not registered for this event");
+                    return;
+                }
+            } catch (Exception e) {
+                err(res, 500, "Could not cancel attendance");
+                return;
+            }
+            ok(res, null);
+            return;
+        }
         try (Connection c = Database.get()) {
             try (PreparedStatement check = c.prepareStatement(
                     "SELECT status, starts_at FROM events WHERE id = ?")) {

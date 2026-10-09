@@ -64,10 +64,6 @@
       + '<div><p class="muted" style="margin:0 0 0.25rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em">Teams</p>' + teamInfo + '</div>'
       + '<div><p class="muted" style="margin:0 0 0.25rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em">Attending</p>' + attendInfo + '</div>'
       + '</div>';
-
-    if (me.role !== 'student') {
-      attendList.innerHTML = '<p class="muted">Attendance registration is for student accounts only.</p>';
-    }
   }
 
   var events;
@@ -81,15 +77,16 @@
       return '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--border)">'
         + '<span style="flex:1;font-weight:500">' + App.esc(ev.title) + '</span>'
         + (attending.has(ev.id)
-            ? '<span class="chip active">Attending</span>'
-            : '<button class="secondary" data-id="' + ev.id + '">Attend</button>')
+            ? '<span class="chip active">Attending</span><button class="secondary" data-id="' + ev.id + '" data-action="cancel">Cancel</button>'
+            : '<button class="secondary" data-id="' + ev.id + '" data-action="attend">Attend</button>')
         + '</div>';
     }).join('') || '<p class="muted">No published events.</p>';
     attendList.querySelectorAll('button').forEach(function (b) {
       b.addEventListener('click', async function () {
+        var cancelling = b.dataset.action === 'cancel';
         try {
-          await App.api('api/attendance', { event_id: parseInt(b.dataset.id, 10) });
-          App.toast('Attendance recorded');
+          await App.api('api/attendance', { action: b.dataset.action, event_id: parseInt(b.dataset.id, 10) });
+          App.toast(cancelling ? 'Attendance cancelled' : 'Attendance recorded');
           await loadMe();
           renderAttend();
         } catch (e) { App.toast(e.message, true); }

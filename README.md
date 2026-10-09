@@ -85,6 +85,11 @@ For a complete staged walkthrough with payloads and verification steps, see [`do
 git clone <repository-url>
 cd Vulnerable-Application
 
+# Pre-create the bot screenshot directory (world-writable: the bot container
+# writes as UID 999; if Docker creates the bind-mount source itself it is
+# owned by root and the bot cannot write there)
+mkdir -p screenshots && chmod 777 screenshots
+
 # Start all services (database, web app, bot)
 docker compose up --build -d
 
@@ -111,7 +116,7 @@ curl -s http://localhost:8080/campus-events/ | head -20
 
 # Check bot health
 curl -s http://localhost:5000/health
-# Expected: {"status":"ok","queue":0,"recent":0}
+# Expected: {"ok":true}
 
 # Check database connectivity
 docker compose exec web curl -s http://localhost:8080/campus-events/api/auth \
@@ -126,7 +131,7 @@ The database is pre-populated with these accounts on first startup:
 | Account       | Password      | Role       | Notes                              |
 |---------------|---------------|------------|------------------------------------|
 | `admin`       | `Admin#2026!` | Admin      | used by the review bot             |
-| `m.organiser` | `Organiser#1!`| Organiser  | owns events 1–3, holds the invite  |
+| `m.organiser` | `Organiser#1!`| Organiser  | owns all seeded events, holds the invites |
 | `a.chen`      | `Student#1!`  | Student    | regular student                    |
 | `r.patel`     | —             | **pending**| activation stage of the chain (V1) |
 
@@ -184,14 +189,18 @@ admin account, opens `review.jsp?id=N`, lets it render fully, and saves a
 full-page screenshot — so any stored payload executes in an admin session
 exactly as it would against a human reviewer.
 
-Control endpoints (port 5000, published on 127.0.0.1 only):
+Control endpoints (port 5000, published on 127.0.0.1 only). GET endpoints are
+open; POST endpoints require the shared lab token (`BOT_TOKEN` from
+`docker-compose.yml`) in an `X-Bot-Token` header:
 
 ```bash
 curl -s localhost:5000/health
-curl -s localhost:5000/status                       # queue + recent results
-curl -s -X POST localhost:5000/review -d '{"event_id":2}'   # manual trigger
-curl -s -X POST localhost:5000/snap -d '{"url":"http://web:8080/campus-events/login.jsp"}'  # debug screenshot
-curl -s -X POST localhost:5000/reset                # drop queue + history
+curl -s localhost:5000/status                       # queue depth + recent job history
+curl -s -X POST localhost:5000/review \
+  -H 'X-Bot-Token: lab-bot-token-890d7ba8d41377626cceaa03f0ab67f1b245d8b6e57d156f66a0e7092b62f3cf' \
+  -d '{"event_id":2}'                               # manual trigger
+curl -s -X POST localhost:5000/reset \
+  -H 'X-Bot-Token: lab-bot-token-890d7ba8d41377626cceaa03f0ab67f1b245d8b6e57d156f66a0e7092b62f3cf'  # drop queue + history
 ```
 
 The bot retries each job up to 3 times, uses a fresh browser context per job
