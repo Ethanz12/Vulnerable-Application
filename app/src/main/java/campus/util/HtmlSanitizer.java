@@ -120,10 +120,10 @@ public final class HtmlSanitizer {
         if (uri == null) {
             return true;
         }
-        String trimmed = uri.trim().toLowerCase();
-        return trimmed.startsWith("javascript:")
-                || trimmed.startsWith("vbscript:")
-                || trimmed.startsWith("data:");
+        String normalized = uri.replaceAll("\\s+", "").toLowerCase();
+        return normalized.startsWith("javascript:")
+                || normalized.startsWith("vbscript:")
+                || normalized.startsWith("data:");
     }
 
     private static String escapeHtmlAttribute(String value) {

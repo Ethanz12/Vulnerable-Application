@@ -102,6 +102,8 @@ public class OrganiserServlet extends ApiServlet {
             submit(req, res, u);
         } else if ("save".equals(action)) {
             save(req, res, u);
+        } else if ("delete".equals(action)) {
+            delete(req, res, u);
         } else {
             err(res, 400, "Unknown action");
         }
@@ -125,6 +127,18 @@ public class OrganiserServlet extends ApiServlet {
         String description = req.getParameter("description_html");
         String location = req.getParameter("location");
         String startsAt = req.getParameter("starts_at");
+        if (startsAt != null && !startsAt.isBlank()) {
+            try {
+                java.time.LocalDateTime eventTime = java.time.LocalDateTime.parse(startsAt.substring(0, 16));
+                if (eventTime.isBefore(java.time.LocalDateTime.now())) {
+                    err(res, 400, "Event start time must be in the future");
+                    return;
+                }
+            } catch (Exception e) {
+                err(res, 400, "Invalid start time format");
+                return;
+            }
+        }
         String idParam = req.getParameter("event_id");
         if (title == null || title.isBlank()) {
             err(res, 400, "Title is required");
@@ -217,6 +231,48 @@ public class OrganiserServlet extends ApiServlet {
             err(res, 400, "Invalid event id");
         } catch (Exception e) {
             err(res, 500, "Submit failed");
+        }
+    }
+
+    private void delete(HttpServletRequest req, HttpServletResponse res, User u) throws IOException {
+        String idParam = req.getParameter("event_id");
+        if (idParam == null) {
+            err(res, 400, "event_id required");
+            return;
+        }
+        try (Connection c = Database.get()) {
+            int eventId = Integer.parseInt(idParam);
+            if (!canManage(c, u, eventId)) {
+                err(res, 403, "You do not manage this event");
+                return;
+            }
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM attendance WHERE event_id=?")) {
+                ps.setInt(1, eventId);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM event_team WHERE event_id=?")) {
+                ps.setInt(1, eventId);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM events WHERE id=?")) {
+                ps.setInt(1, eventId);
+                int deleted = ps.executeUpdate();
+                if (deleted == 0) {
+                    err(res, 404, "Event not found");
+                    return;
+                }
+            }
+            try (PreparedStatement ps = c.prepareStatement(
+                    "INSERT INTO audit_log (actor, action, detail) VALUES (?, 'event_delete', ?)")) {
+                ps.setString(1, u.getUsername());
+                ps.setString(2, "event " + eventId + " deleted");
+                ps.executeUpdate();
+            }
+            ok(res, new JSONObject().put("deleted", eventId));
+        } catch (NumberFormatException e) {
+            err(res, 400, "Invalid event id");
+        } catch (Exception e) {
+            err(res, 500, "Delete failed");
         }
     }
 

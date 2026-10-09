@@ -71,10 +71,17 @@ public class TeamServlet extends ApiServlet {
             
             
             boolean eventExists;
-            try (PreparedStatement ps = c.prepareStatement("SELECT 1 FROM events WHERE id=?")) {
+            try (PreparedStatement ps = c.prepareStatement("SELECT starts_at FROM events WHERE id=?")) {
                 ps.setInt(1, eventId);
                 try (ResultSet rs = ps.executeQuery()) {
                     eventExists = rs.next();
+                    if (eventExists) {
+                        var startsAt = rs.getTimestamp("starts_at");
+                        if (startsAt != null && startsAt.toLocalDateTime().isBefore(java.time.LocalDateTime.now())) {
+                            err(res, 403, "Event has already ended");
+                            return;
+                        }
+                    }
                 }
             }
             if (!eventExists) {

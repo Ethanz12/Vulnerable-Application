@@ -27,13 +27,32 @@ public class AttendanceServlet extends ApiServlet {
             err(res, 400, "event_id required");
             return;
         }
-        try (Connection c = Database.get();
-             PreparedStatement ps = c.prepareStatement(
+        try (Connection c = Database.get()) {
+            try (PreparedStatement check = c.prepareStatement(
+                    "SELECT status, starts_at FROM events WHERE id = ?")) {
+                check.setInt(1, eventId);
+                var rs = check.executeQuery();
+                if (!rs.next()) {
+                    err(res, 404, "Event not found");
+                    return;
+                }
+                if (!"published".equals(rs.getString("status"))) {
+                    err(res, 403, "Event is not published");
+                    return;
+                }
+                var startsAt = rs.getTimestamp("starts_at");
+                if (startsAt != null && startsAt.toLocalDateTime().isBefore(java.time.LocalDateTime.now())) {
+                    err(res, 403, "Event has already ended");
+                    return;
+                }
+            }
+            try (PreparedStatement ps = c.prepareStatement(
                      "INSERT INTO attendance (event_id, user_id) VALUES (?, ?) "
                      + "ON CONFLICT (event_id, user_id) DO NOTHING")) {
-            ps.setInt(1, eventId);
-            ps.setInt(2, u.getId());
-            ps.executeUpdate();
+                ps.setInt(1, eventId);
+                ps.setInt(2, u.getId());
+                ps.executeUpdate();
+            }
         } catch (Exception e) {
             err(res, 500, "Could not record attendance");
             return;

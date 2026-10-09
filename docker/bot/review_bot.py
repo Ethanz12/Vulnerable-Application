@@ -15,6 +15,7 @@ Endpoints (port 5000):
     GET  /status   -> queue depth + recent job history
     POST /review   -> {"event_id": 2}  enqueue a review job (requires X-Bot-Token)
     POST /reset    -> drop queued jobs and clear history (requires X-Bot-Token)
+"""
 
 import json
 import os
@@ -36,7 +37,7 @@ SCREENSHOT_DIR = os.environ.get("SCREENSHOT_DIR", "/bot/screenshots")
 RENDER_WAIT_MS = int(os.environ.get("RENDER_WAIT_MS", "2500"))
 MAX_ATTEMPTS = int(os.environ.get("MAX_ATTEMPTS", "3"))
 
-BOT_TOKEN = secrets.token_hex(32)
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "lab-bot-token-890d7ba8d41377626cceaa03f0ab67f1b245d8b6e57d156f66a0e7092b62f3cf")
 
 JOBS = queue.Queue()
 HISTORY = []
