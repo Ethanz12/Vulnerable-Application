@@ -34,7 +34,7 @@ You will practice:
 
 **Required tools:**
 - Docker and Docker Compose (version 20.10+)
-- Python 3.8+ (for `rc4cli.py` helper)
+- Python 3.8+
 - A web browser with developer tools
 - (Optional) Burp Suite or similar intercepting proxy
 
@@ -63,8 +63,6 @@ Unauthenticated → Student → Organiser → Administrator → RCE
 - The RC4 envelope is not a security boundary; the key is hardcoded and shipped to every client
 - The admin review bot automatically visits events submitted for review
 - All API endpoints are under `/api/*` and use the RC4 envelope
-
-For a complete staged walkthrough with payloads and verification steps, see [`docs/ATTACK-CHAIN.md`](docs/ATTACK-CHAIN.md).
 
 ## Stack
 
@@ -165,20 +163,7 @@ All request/response bodies are wrapped as:
 {"enc": "<base64(RC4(\"Rc4StaticKey#Campus2026\", body))>"}
 ```
 
-Use the bundled helper to talk to the API from a terminal:
-
-```bash
-# login and keep the session
-python3 tools/rc4cli.py request --jar /tmp/admin.jar \
-    --data '{"action":"login","username":"admin","password":"Admin#2026!"}' api/auth
-
-# authenticated call with the same jar
-python3 tools/rc4cli.py request --jar /tmp/admin.jar api/admin/users
-```
-
-`rc4cli.py` also does offline work: `encrypt` / `decrypt` subcommands read
-stdin (or `--data`), and the key/base URL are overridable with `--key`,
-`--base`, `RC4_KEY`, `APP_URL`.
+The RC4 key is hardcoded in `app/src/main/resources/app.properties` and shipped to every client in `static/js/app-crypto.js`. You will need to implement your own tooling or use Burp Suite to encrypt/decrypt API traffic.
 
 ## Admin review bot (used in stage V3)
 
@@ -209,9 +194,6 @@ compose service: `docker compose up -d bot` / `docker compose stop bot`.
 
 ## Documentation
 
-- [`docs/ATTACK-CHAIN.md`](docs/ATTACK-CHAIN.md) — staged walkthrough of the
-  full Unauthenticated → Student → Organiser → Administrator → RCE chain,
-  with hints, payloads, and verification steps.
 - `app/src/main/java/campus/` — each vulnerability is marked in-code
   (`V1` activation, `V2` team join IDOR, `V3` review sink, `V4` upload/preview).
 
@@ -225,5 +207,4 @@ app/                      Maven project, Tomcat WAR
   src/main/webapp/        JSPs, static assets, CKEditor vendor copy
 docker/bot/               Playwright admin review bot
 screenshots/              bot screenshots (bind-mounted)
-tools/rc4cli.py           envelope helper for terminal-based testing
 ```
