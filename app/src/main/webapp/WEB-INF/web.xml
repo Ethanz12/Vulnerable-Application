@@ -14,7 +14,6 @@
   <session-config>
     <cookie-config>
       <http-only>true</http-only>
-      <secure>true</secure>
       <same-site>Lax</same-site>
     </cookie-config>
     <tracking-mode>COOKIE</tracking-mode>

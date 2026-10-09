@@ -53,11 +53,25 @@ async function loadEvents() {
     }
     eventsTable.innerHTML = data.events.map(function (ev) {
       return '<tr><td class="muted">#' + ev.id + '</td><td style="font-weight:500">' + App.esc(ev.title) + '</td><td>' + statusChip(ev.status)
-        + '</td><td style="text-align:right"><button class="secondary" data-id="' + ev.id + '">Edit</button></td></tr>';
+        + '</td><td style="text-align:right;white-space:nowrap">'
+        + '<button class="secondary" data-id="' + ev.id + '">Edit</button> '
+        + '<button class="secondary danger" data-id="' + ev.id + '" data-action="delete">Delete</button></td></tr>';
     }).join('');
     eventsTable.querySelectorAll('button').forEach(function (b) {
-      b.addEventListener('click', function () {
+      b.addEventListener('click', async function () {
         var ev = data.events.find(function (x) { return x.id === parseInt(b.dataset.id, 10); });
+        if (b.dataset.action === 'delete') {
+          if (!confirm('Delete event #' + ev.id + ' (' + ev.title + ')? This also removes its team, invitations and attendance records.')) { return; }
+          try {
+            await App.api('api/organiser', { action: 'delete', event_id: ev.id });
+            App.toast('Event #' + ev.id + ' deleted');
+            if (document.getElementById('ev-id').value === String(ev.id)) {
+              document.getElementById('editor-panel').hidden = true;
+            }
+            loadEvents();
+          } catch (err) { App.toast(err.message, true); }
+          return;
+        }
         openEditor(ev);
       });
     });

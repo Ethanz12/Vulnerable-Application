@@ -254,6 +254,10 @@ public class OrganiserServlet extends ApiServlet {
                 ps.setInt(1, eventId);
                 ps.executeUpdate();
             }
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM invitations WHERE event_id=?")) {
+                ps.setInt(1, eventId);
+                ps.executeUpdate();
+            }
             try (PreparedStatement ps = c.prepareStatement("DELETE FROM events WHERE id=?")) {
                 ps.setInt(1, eventId);
                 int deleted = ps.executeUpdate();
